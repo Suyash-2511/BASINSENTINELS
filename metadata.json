@@ -1,0 +1,9 @@
+{
+  "name": "Basin Sentinels",
+  "description": "A Basin-Wide Water Quality Monitoring & Event-Aware Prediction System for the Godavari River Basin.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
