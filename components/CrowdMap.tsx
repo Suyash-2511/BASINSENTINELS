@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CrowdZone, RiskLevel } from '../types';
 import L from 'leaflet';
-import { Crosshair, Radio, Zap, Target } from 'lucide-react';
+import { Crosshair, Radio, Zap, Target, Layers, Activity } from 'lucide-react';
 
 interface CrowdMapProps {
   zones: CrowdZone[];
@@ -14,39 +14,38 @@ const CrowdMap: React.FC<CrowdMapProps> = ({ zones, selectedZone, onSelectZone }
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef<{ [key: string]: L.Layer }>({});
 
-  const getRiskColor = (level: RiskLevel) => {
-    switch (level) {
-      case RiskLevel.LOW: return '#10B981';
-      case RiskLevel.MODERATE: return '#F59E0B';
-      case RiskLevel.HIGH: return '#F43F5E';
-      case RiskLevel.CRITICAL: return '#E11D48';
-      default: return '#22d3ee';
-    }
+  const getHeatmapColor = (occupancy: number): string => {
+    // Gradient logic: Green -> Yellow -> Orange -> Red
+    if (occupancy < 40) return '#10B981'; // Emerald 500
+    if (occupancy < 70) return '#F59E0B'; // Amber 500
+    if (occupancy < 90) return '#F97316'; // Orange 500 (Vibrant)
+    return '#EF4444'; // Red 500 (Vibrant)
   };
 
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Use Satellite view for Drone Ops feel
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '&copy; Esri',
+    // Use Esri World Topo for a clean, light terrain view
+    const terrainLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
       maxZoom: 19
     });
 
     const map = L.map(mapContainerRef.current, {
       zoomControl: false,
       attributionControl: false,
-      layers: [satelliteLayer],
+      layers: [terrainLayer],
       scrollWheelZoom: false
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.attribution({ position: 'bottomright' }).addAttribution('Crowd Analytics').addTo(map);
 
     mapInstanceRef.current = map;
 
     if (zones.length > 0) {
       const bounds = L.latLngBounds(zones.map(z => [z.coordinates.lat, z.coordinates.lng]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+      map.fitBounds(bounds, { padding: [100, 100], maxZoom: 16 });
     }
 
     return () => {
@@ -65,48 +64,60 @@ const CrowdMap: React.FC<CrowdMapProps> = ({ zones, selectedZone, onSelectZone }
 
     zones.forEach(zone => {
       const isSelected = selectedZone?.id === zone.id;
-      const color = getRiskColor(zone.riskLevel);
-
-      // 1. Crowd Density Circle (Heatmap simulation)
-      const circle = L.circle([zone.coordinates.lat, zone.coordinates.lng], {
-        radius: zone.radius,
-        color: 'transparent',
-        fillColor: color,
-        fillOpacity: isSelected ? 0.4 : 0.2,
-      }).addTo(map);
+      const heatmapColor = getHeatmapColor(zone.occupancy);
       
-      // Add pulsing animation for high risk
-      if (zone.riskLevel === RiskLevel.CRITICAL || zone.riskLevel === RiskLevel.HIGH) {
-         // This would ideally be a CSS animation on a divIcon, but for L.circle we just change opacity.
-         // Let's add a pulsing ring marker instead for the "Alarm" effect.
-      }
+      // Calculate intensity based radius
+      // Higher occupancy = larger spread of 'heat'
+      // Base radius multiplied by a factor of occupancy to show 'spread'
+      const spreadFactor = 1 + (zone.occupancy / 100); 
+      const heatRadius = zone.radius * spreadFactor;
 
-      layersRef.current[`circle-${zone.id}`] = circle;
+      // 1. DYNAMIC HEATMAP LAYER
+      // Uses a large, heavily blurred circle to simulate a heat spot.
+      // When these overlap (via mix-blend-mode in CSS), they create a density effect.
+      
+      const heatmapBlob = L.circle([zone.coordinates.lat, zone.coordinates.lng], {
+        radius: heatRadius,
+        stroke: false,
+        fillColor: heatmapColor,
+        fillOpacity: 0.7, // High opacity + blur = solid gradients
+        className: 'heatmap-blob' // CSS class applies the blur and blend mode
+      }).addTo(map);
 
-      // 2. Drone Marker
+      // 2. CORE INTENSITY
+      // A smaller, brighter core to indicate the center of the crowd mass
+      const heatCore = L.circle([zone.coordinates.lat, zone.coordinates.lng], {
+        radius: zone.radius * 0.4,
+        stroke: false,
+        fillColor: heatmapColor,
+        fillOpacity: 0.4,
+        className: 'heatmap-blob'
+      }).addTo(map);
+
+      layersRef.current[`heat-blob-${zone.id}`] = heatmapBlob;
+      layersRef.current[`heat-core-${zone.id}`] = heatCore;
+
+      // 3. DRONE MARKER (Interaction Layer)
+      // Remains as the interactive element on top of the heat layer
       const droneIconHtml = `
-        <div class="relative w-full h-full flex items-center justify-center group">
-          <div class="absolute inset-0 border border-${isSelected ? 'white' : 'transparent'} rounded-full animate-spin-slow opacity-50"></div>
-          
+        <div class="relative w-full h-full flex items-center justify-center group cursor-pointer transition-transform duration-300 ${isSelected ? 'scale-110' : 'scale-100 hover:scale-110'}">
           <!-- Drone Icon -->
-          <div class="relative z-10 transform transition-transform duration-300 ${isSelected ? 'scale-125' : 'scale-100'}">
-             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="relative z-10 drop-shadow-md">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="${isSelected ? '#0f172a' : '#1e293b'}" stroke="none">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
              </svg>
           </div>
 
-          <!-- Label -->
-          <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-midnight-950/80 backdrop-blur px-2 py-0.5 rounded border border-slate-700 text-[9px] font-mono text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-             Drone-${zone.droneId}
-          </div>
+          <!-- Status Dot -->
+          <div class="absolute -top-1 -right-1 w-2 h-2 ${zone.riskLevel === RiskLevel.CRITICAL ? 'bg-red-500 animate-ping' : 'bg-emerald-500'} rounded-full"></div>
         </div>
       `;
 
       const droneIcon = L.divIcon({
         className: 'custom-drone-icon',
         html: droneIconHtml,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
 
       const marker = L.marker([zone.coordinates.lat, zone.coordinates.lng], { icon: droneIcon });
@@ -123,45 +134,66 @@ const CrowdMap: React.FC<CrowdMapProps> = ({ zones, selectedZone, onSelectZone }
   }, [zones, selectedZone, onSelectZone]);
 
   return (
-    <div className="relative w-full h-[600px] glass-panel rounded-2xl overflow-hidden shadow-2xl group border border-midnight-800">
-      <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500/50 to-amber-500/50 z-[401]"></div>
+    // Updated container to use glass-panel class with transparency
+    <div className="relative w-full h-[600px] glass-panel rounded-2xl overflow-hidden shadow-2xl group border border-white/50 bg-white/60">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-amber-500 z-[401]"></div>
       
-      {/* HUD Overlay */}
+      {/* HUD Overlay - Light Theme */}
       <div className="absolute inset-0 pointer-events-none z-[400]">
-         {/* Crosshairs */}
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] border border-white/5 rounded-full flex items-center justify-center opacity-30">
-            <div className="w-[1px] h-4 bg-white/20 absolute top-0"></div>
-            <div className="w-[1px] h-4 bg-white/20 absolute bottom-0"></div>
-            <div className="h-[1px] w-4 bg-white/20 absolute left-0"></div>
-            <div className="h-[1px] w-4 bg-white/20 absolute right-0"></div>
-         </div>
-
+         
          {/* Top Left Status */}
-         <div className="absolute top-6 left-6 pointer-events-auto bg-midnight-950/90 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-700/50 inline-flex items-center gap-3 shadow-lg">
-             <Crosshair className="w-4 h-4 text-emerald-400 animate-pulse" />
+         <div className="absolute top-6 left-6 pointer-events-auto bg-white/60 backdrop-blur-md px-4 py-3 rounded-xl border border-white/50 shadow-xl inline-flex items-center gap-4">
+             <div className="bg-emerald-100/80 p-2 rounded-lg text-emerald-600">
+                <Activity className="w-5 h-5 animate-pulse" />
+             </div>
              <div className="flex flex-col">
-               <span className="text-[10px] font-mono font-bold text-slate-200 uppercase tracking-widest">
-                  Drone Surveillance Grid
+               <span className="text-xs font-display font-bold text-slate-900 uppercase tracking-widest leading-none">
+                  Heatmap Layer
                </span>
-               <span className="text-[9px] font-mono text-emerald-500">
-                  LIVE FEED • 3 ACTIVE UNITS
+               <span className="text-[10px] font-mono font-medium text-slate-500 mt-1">
+                  DENSITY VISUALIZATION
                </span>
              </div>
          </div>
          
-         {/* Top Right Legend */}
-         <div className="absolute top-6 right-6 pointer-events-auto flex flex-col gap-2 items-end">
-             <div className="bg-midnight-950/80 backdrop-blur px-3 py-1.5 rounded border border-red-500/30 flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-                <span className="text-[10px] font-mono text-red-400 font-bold">CRITICAL DENSITY</span>
+         {/* Top Right Legend (Updated for Heatmap) */}
+         <div className="absolute top-6 right-6 pointer-events-auto flex flex-col gap-3 items-end">
+             <div className="bg-white/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/50 shadow-lg flex flex-col gap-2">
+                <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-0.5 text-right">Occupancy</span>
+                <div className="flex items-center gap-2">
+                   <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-3 h-3 rounded bg-emerald-400"></div>
+                      <span className="text-[8px] font-mono text-slate-500">&lt;40%</span>
+                   </div>
+                   <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-3 h-3 rounded bg-amber-400"></div>
+                      <span className="text-[8px] font-mono text-slate-500">70%</span>
+                   </div>
+                   <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-3 h-3 rounded bg-orange-500"></div>
+                      <span className="text-[8px] font-mono text-slate-500">90%</span>
+                   </div>
+                   <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-3 h-3 rounded bg-red-500 shadow-sm shadow-red-500/50"></div>
+                      <span className="text-[8px] font-mono text-slate-500">&gt;90%</span>
+                   </div>
+                </div>
+             </div>
+         </div>
+         
+         {/* Bottom Center Mode Indicator */}
+         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+             <div className="bg-slate-900/90 text-white px-4 py-1.5 rounded-full text-[10px] font-mono tracking-widest uppercase shadow-2xl border border-slate-700 flex items-center gap-2">
+                <Layers className="w-3 h-3 text-amber-400" />
+                Crowd Thermal View
              </div>
          </div>
       </div>
 
-      <div ref={mapContainerRef} className="w-full h-full bg-midnight-950 outline-none" />
+      <div ref={mapContainerRef} className="w-full h-full bg-slate-50 outline-none" />
       
-      {/* Scan lines effect */}
-      <div className="absolute inset-0 pointer-events-none z-[399] opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]"></div>
+      {/* Subtle overlay texture for paper/map feel */}
+      <div className="absolute inset-0 pointer-events-none z-[399] opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
     </div>
   );
 };

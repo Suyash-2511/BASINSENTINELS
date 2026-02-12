@@ -5,8 +5,8 @@ import Dashboard from './components/Dashboard';
 import CrowdMap from './components/CrowdMap';
 import CrowdDashboard from './components/CrowdDashboard';
 import IntelligencePanel from './components/IntelligencePanel';
-import { Shield, Users, ChevronDown, Activity, AlertTriangle, Calendar, Hexagon, Waves, Map as MapIcon, Crosshair } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Shield, Users, ChevronDown, Activity, AlertTriangle, Calendar, Hexagon, Waves, Map as MapIcon, Crosshair, ArrowRight } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 
 const MOCK_NODES: MonitoringNode[] = [
   {
@@ -79,21 +79,45 @@ const MOCK_CROWD_ZONES: CrowdZone[] = [
   }
 ];
 
+// Professional "Orbital Drop" Logo
 const SentinelLogo = () => (
-  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-cyan-400">
-    <path d="M20 38C20 38 36 30 36 10V6L20 2L4 6V10C4 30 20 38 20 38Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(34, 211, 238, 0.1)"/>
-    <path d="M20 12V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M20 26H20.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-    <path d="M12 16C12 16 14 18 20 18C26 18 28 16 28 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.6"/>
+  <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-900 transition-all duration-500 hover:drop-shadow-glow">
+    <defs>
+      <linearGradient id="logoGradient" x1="21" y1="6" x2="21" y2="36" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#38BDF8" />
+        <stop offset="1" stopColor="#0284C7" />
+      </linearGradient>
+    </defs>
+    
+    {/* Central Drop */}
+    <path d="M21 6C21 6 10 18 10 25C10 31.0751 14.9249 36 21 36C27.0751 36 32 31.0751 32 25C32 18 21 6 21 6Z" 
+          fill="url(#logoGradient)" />
+          
+    {/* Sensor Node (Pulse) */}
+    <circle cx="21" cy="28" r="2.5" fill="white" fillOpacity="0.95" className="animate-pulse" />
+    
+    {/* Orbital Ring Segment (Monitoring) */}
+    <path d="M37 25C37 33.8366 29.8366 41 21 41C12.1634 41 5 33.8366 5 25" 
+          stroke="#0EA5E9" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.3" />
+    
+    {/* Upper Tech Accents */}
+    <path d="M35 15L37 13" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4" />
+    <path d="M7 15L5 13" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4" />
   </svg>
 );
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<'water' | 'crowd'>('water');
-  const [selectedNode, setSelectedNode] = useState<MonitoringNode | null>(MOCK_NODES[5]); // Default to Ramkund
+  const [selectedNode, setSelectedNode] = useState<MonitoringNode | null>(MOCK_NODES[5]); 
   const [selectedCrowdZone, setSelectedCrowdZone] = useState<CrowdZone | null>(MOCK_CROWD_ZONES[0]);
   const [viewMode, setViewMode] = useState<'authority' | 'public'>('authority');
   const [scrolled, setScrolled] = useState(false);
+
+  const { scrollY } = useScroll();
+  const yRange1 = useTransform(scrollY, [0, 1000], [0, 300]);
+  const yRange2 = useTransform(scrollY, [0, 1000], [0, -150]);
+  const yRange3 = useTransform(scrollY, [0, 1000], [0, 100]);
+  const opacityRange = useTransform(scrollY, [0, 600], [1, 0]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -104,213 +128,231 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-midnight-950 font-sans text-slate-200 selection:bg-cyan-500/30 selection:text-cyan-200 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-cyan-500/20 selection:text-cyan-900 pb-20 relative overflow-hidden">
       
-      {/* Background Layers */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-circuit-pattern opacity-[0.03]"></div>
-        <div className="absolute top-0 left-[-10%] w-[800px] h-[800px] bg-cyan-900/10 rounded-full blur-[128px] animate-blob mix-blend-screen"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[128px] animate-blob animation-delay-2000 mix-blend-screen"></div>
+      {/* --- Parallax Background --- */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-circuit-pattern opacity-[0.04]"></div>
+        <motion.div style={{ y: yRange1, opacity: opacityRange }} className="absolute w-full h-full">
+            <div className="absolute top-[-10%] left-[-10%] w-[900px] h-[900px] bg-cyan-200/20 rounded-full blur-[130px] mix-blend-multiply"></div>
+        </motion.div>
+        <motion.div style={{ y: yRange2, opacity: opacityRange }} className="absolute w-full h-full">
+             <div className="absolute top-[20%] right-[-10%] w-[700px] h-[700px] bg-indigo-200/20 rounded-full blur-[130px] mix-blend-multiply"></div>
+        </motion.div>
+        <motion.div style={{ y: yRange3, opacity: opacityRange }} className="absolute w-full h-full">
+             <div className="absolute bottom-[-10%] left-[20%] w-[800px] h-[800px] bg-cyan-100/30 rounded-full blur-[100px] mix-blend-multiply"></div>
+        </motion.div>
       </div>
 
       {/* Navigation */}
-      <nav className={`fixed w-full z-50 transition-all duration-500 ${scrolled ? 'bg-midnight-950/80 backdrop-blur-xl border-b border-midnight-800 py-3 shadow-lg' : 'bg-transparent border-b border-transparent py-6'}`}>
+      <nav className={`fixed w-full z-50 transition-all duration-500 ${scrolled ? 'bg-white/70 backdrop-blur-xl border-b border-white/50 py-3 shadow-sm' : 'bg-transparent border-b border-transparent py-6'}`}>
         <div className="container mx-auto px-6 lg:px-12 flex justify-between items-center">
           <div className="flex items-center gap-4 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="relative transform transition-transform group-hover:scale-105 duration-300">
-              <div className="absolute inset-0 bg-cyan-400 blur-xl opacity-20"></div>
               <SentinelLogo />
             </div>
             <div>
-              <h1 className="text-2xl font-display font-bold tracking-tight text-white leading-none">BASIN<span className="text-cyan-400">SENTINELS</span></h1>
+              <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 leading-none">
+                BASIN<span className="text-cyan-600 font-medium">SENTINELS</span>
+              </h1>
               <div className="flex items-center gap-2 mt-1">
-                <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                <span className="flex h-1.5 w-1.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                 </span>
-                <p className="text-[10px] text-cyan-500/80 font-mono tracking-widest uppercase font-semibold">System Operational</p>
+                <p className="text-[10px] text-slate-500 font-mono tracking-widest uppercase font-semibold">Online</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex bg-midnight-900/60 p-1.5 rounded-lg border border-midnight-800 backdrop-blur-md">
+            <div className="flex bg-slate-100/80 p-1 rounded-lg border border-slate-200/50 shadow-inner">
               <button 
                 onClick={() => setViewMode('authority')}
-                className={`px-4 py-1.5 rounded-md text-sm font-display font-semibold transition-all flex items-center gap-2 ${viewMode === 'authority' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.15)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                className={`px-4 py-1.5 rounded-md text-xs font-display font-bold transition-all flex items-center gap-2 ${viewMode === 'authority' ? 'bg-white text-cyan-700 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                <Shield className="w-4 h-4" /> <span className="hidden sm:inline">AUTHORITY</span>
+                <Shield className="w-3.5 h-3.5" /> <span className="hidden sm:inline">AUTHORITY</span>
               </button>
               <button 
                 onClick={() => setViewMode('public')}
-                className={`px-4 py-1.5 rounded-md text-sm font-display font-semibold transition-all flex items-center gap-2 ${viewMode === 'public' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.15)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                className={`px-4 py-1.5 rounded-md text-xs font-display font-bold transition-all flex items-center gap-2 ${viewMode === 'public' ? 'bg-white text-cyan-700 shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                <Users className="w-4 h-4" /> <span className="hidden sm:inline">PUBLIC</span>
+                <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">PUBLIC</span>
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero / Header Section */}
-      <header className="relative pt-40 pb-16 px-6 lg:px-12 z-10">
+      {/* Hero Section */}
+      <header className="relative pt-44 pb-20 px-6 lg:px-12 z-10">
         <div className="container mx-auto">
-          <div className="flex flex-col xl:flex-row justify-between items-end gap-10 mb-16">
-            <div className="max-w-4xl">
-              <div className="inline-flex items-center gap-3 mb-6 px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/5 backdrop-blur-sm">
-                 <span className="text-[10px] font-mono font-bold text-cyan-400 tracking-wider">V.2.4.0 STABLE</span>
-                 <div className="h-3 w-px bg-cyan-500/20"></div>
-                 <span className="text-[10px] font-mono text-cyan-200/60 tracking-wider uppercase">Godavari River Basin • Nashik Sector</span>
+          <div className="flex flex-col xl:flex-row justify-between items-end gap-10 mb-20">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="max-w-4xl"
+            >
+              <div className="inline-flex items-center gap-3 mb-8 px-4 py-1.5 rounded-full border border-cyan-200 bg-cyan-50/50 backdrop-blur-md">
+                 <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
+                 </div>
+                 <span className="text-[10px] font-mono font-bold text-cyan-800 tracking-wider">SYSTEM V.2.4 • NASHIK SECTOR</span>
               </div>
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-display font-bold text-white leading-[0.9] tracking-tight mb-6">
-                PREDICTING WATER RISK <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400">BEFORE THE CRISIS</span>
+              <h1 className="text-6xl md:text-7xl lg:text-8xl font-display font-bold text-slate-900 leading-[0.9] tracking-tight mb-8">
+                PREDICTING RISK <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600">BEFORE CRISIS</span>
               </h1>
-              <p className="text-lg text-slate-400 max-w-2xl font-light leading-relaxed">
-                 Deploying advanced hydrological sensor fusion and event-aware predictive intelligence to safeguard the Godavari ecosystem.
+              <p className="text-xl text-slate-600 max-w-2xl font-light leading-relaxed">
+                 Advanced hydrological sensor fusion and predictive intelligence for the Godavari ecosystem.
               </p>
-            </div>
+            </motion.div>
             
-            <div className="flex flex-col items-end gap-4">
-                <button onClick={() => window.scrollTo({ top: 800, behavior: 'smooth' })} className="group flex items-center gap-3 px-6 py-3 rounded-lg border border-cyan-500/30 text-cyan-400 text-sm font-mono font-bold hover:bg-cyan-500/10 transition-all">
-                  INITIALIZE DIAGNOSTICS <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
+            <motion.div 
+               initial={{ opacity: 0, x: 20 }}
+               animate={{ opacity: 1, x: 0 }}
+               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            >
+                <button onClick={() => window.scrollTo({ top: 800, behavior: 'smooth' })} className="group flex items-center gap-3 px-8 py-4 rounded-full border border-slate-200 bg-white shadow-xl shadow-cyan-900/5 text-slate-800 text-sm font-mono font-bold hover:border-cyan-400 hover:text-cyan-700 transition-all hover:-translate-y-1">
+                  INITIALIZE DIAGNOSTICS <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                </button>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Module Switcher Tab */}
-          <div className="mb-8 border-b border-white/5">
-             <div className="flex gap-8">
+          {/* Module Switcher - Floating Segmented Control */}
+          <div className="mb-12 flex justify-center lg:justify-start">
+             <div className="inline-flex bg-slate-200/50 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-inner relative">
+                <div 
+                  className={`absolute top-1.5 bottom-1.5 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out z-0`}
+                  style={{
+                    left: activeModule === 'water' ? '6px' : '50%',
+                    width: 'calc(50% - 9px)',
+                    transform: activeModule === 'crowd' ? 'translateX(3px)' : 'translateX(0)'
+                  }}
+                />
                 <button 
                   onClick={() => setActiveModule('water')}
-                  className={`pb-4 px-2 text-sm font-bold uppercase tracking-wider transition-all relative ${activeModule === 'water' ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-3 w-64 justify-center ${activeModule === 'water' ? 'text-cyan-700' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <span className="flex items-center gap-2"><Waves className="w-4 h-4" /> Water Quality Monitor</span>
-                  {activeModule === 'water' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400 shadow-[0_0_10px_#22d3ee]"></motion.div>}
+                  <Waves className={`w-4 h-4 ${activeModule === 'water' ? 'text-cyan-500' : 'text-slate-400'}`} /> 
+                  Water Quality
                 </button>
                 <button 
                   onClick={() => setActiveModule('crowd')}
-                  className={`pb-4 px-2 text-sm font-bold uppercase tracking-wider transition-all relative ${activeModule === 'crowd' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-3 w-64 justify-center ${activeModule === 'crowd' ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <span className="flex items-center gap-2"><Crosshair className="w-4 h-4" /> Crowd Control Grid</span>
-                  {activeModule === 'crowd' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-400 shadow-[0_0_10px_#10b981]"></motion.div>}
+                  <Crosshair className={`w-4 h-4 ${activeModule === 'crowd' ? 'text-emerald-500' : 'text-slate-400'}`} /> 
+                  Crowd Grid
                 </button>
              </div>
           </div>
 
-          {/* Key Metrics Row - Conditional based on Module */}
+          {/* Key Metrics Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <AnimatePresence mode="wait">
             {activeModule === 'water' ? (
-              <>
+              <React.Fragment key="water-metrics">
                 <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all group relative overflow-hidden"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                  className="glass-panel-hover glass-panel p-6 rounded-2xl group relative overflow-hidden"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/50 to-transparent opacity-100"></div>
                   <div className="flex justify-between items-start relative z-10">
                     <div>
-                      <div className="text-cyan-500/70 text-xs font-mono uppercase tracking-wider mb-2">Basin Health Index</div>
-                      <div className="text-5xl font-display font-bold text-white group-hover:text-cyan-400 transition-colors">78<span className="text-2xl text-slate-500 ml-1">%</span></div>
+                      <div className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mb-2 font-bold">Basin Health Index</div>
+                      <div className="text-5xl font-display font-bold text-slate-800 group-hover:text-cyan-700 transition-colors">78<span className="text-2xl text-slate-400 ml-1">%</span></div>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-cyan-500 shadow-sm group-hover:scale-110 transition-transform">
                       <Activity className="w-6 h-6" />
                     </div>
                   </div>
-                  <div className="mt-4 h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-cyan-500 w-[78%] rounded-full shadow-[0_0_10px_#22d3ee]"></div>
+                  <div className="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                    <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 w-[78%] rounded-full"></div>
                   </div>
                 </motion.div>
 
                 <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-amber-500/30 transition-all group relative overflow-hidden"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ delay: 0.1 }}
+                  className="glass-panel-hover glass-panel p-6 rounded-2xl group relative overflow-hidden"
                 >
-                   <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                   <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-100"></div>
                   <div className="flex justify-between items-start relative z-10">
                     <div>
-                      <div className="text-amber-500/70 text-xs font-mono uppercase tracking-wider mb-2">Critical Zones</div>
-                      <div className="text-5xl font-display font-bold text-white group-hover:text-amber-400 transition-colors">02</div>
+                      <div className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mb-2 font-bold">Critical Zones</div>
+                      <div className="text-5xl font-display font-bold text-slate-800 group-hover:text-amber-600 transition-colors">02</div>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-amber-500 shadow-sm group-hover:scale-110 transition-transform">
                       <AlertTriangle className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
-                     <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20">Ganga Ghat</span>
-                     <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20">Tapovan</span>
+                     <span className="px-2 py-1 rounded-md text-[10px] font-mono font-bold bg-white text-amber-700 border border-amber-100 shadow-sm">Ganga Ghat</span>
+                     <span className="px-2 py-1 rounded-md text-[10px] font-mono font-bold bg-white text-amber-700 border border-amber-100 shadow-sm">Tapovan</span>
                   </div>
                 </motion.div>
-              </>
+              </React.Fragment>
             ) : (
-              <>
+              <React.Fragment key="crowd-metrics">
                  <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                  className="glass-panel-hover glass-panel p-6 rounded-2xl group relative overflow-hidden"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-100"></div>
                   <div className="flex justify-between items-start relative z-10">
                     <div>
-                      <div className="text-emerald-500/70 text-xs font-mono uppercase tracking-wider mb-2">Total Headcount</div>
-                      <div className="text-5xl font-display font-bold text-white group-hover:text-emerald-400 transition-colors">27.5<span className="text-2xl text-slate-500 ml-1">k</span></div>
+                      <div className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mb-2 font-bold">Total Headcount</div>
+                      <div className="text-5xl font-display font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">27.5<span className="text-2xl text-slate-400 ml-1">k</span></div>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-emerald-500 shadow-sm group-hover:scale-110 transition-transform">
                       <Users className="w-6 h-6" />
                     </div>
                   </div>
-                  <div className="mt-4 h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 w-[65%] rounded-full shadow-[0_0_10px_#10b981]"></div>
+                  <div className="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                    <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 w-[65%] rounded-full"></div>
                   </div>
                 </motion.div>
 
                 <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-rose-500/30 transition-all group relative overflow-hidden"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ delay: 0.1 }}
+                  className="glass-panel-hover glass-panel p-6 rounded-2xl group relative overflow-hidden"
                 >
-                   <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                   <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-100"></div>
                   <div className="flex justify-between items-start relative z-10">
                     <div>
-                      <div className="text-rose-500/70 text-xs font-mono uppercase tracking-wider mb-2">Stampede Risk</div>
-                      <div className="text-5xl font-display font-bold text-white group-hover:text-rose-400 transition-colors">HIGH</div>
+                      <div className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mb-2 font-bold">Stampede Risk</div>
+                      <div className="text-5xl font-display font-bold text-slate-800 group-hover:text-rose-600 transition-colors">HIGH</div>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-rose-500 shadow-sm group-hover:scale-110 transition-transform">
                       <AlertTriangle className="w-6 h-6 animate-pulse" />
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
-                     <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20">Ramkund Sector A</span>
+                     <span className="px-2 py-1 rounded-md text-[10px] font-mono font-bold bg-white text-rose-700 border border-rose-100 shadow-sm">Ramkund Sector A</span>
                   </div>
                 </motion.div>
-              </>
+              </React.Fragment>
             )}
 
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-violet-500/30 transition-all group relative overflow-hidden"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="glass-panel-hover glass-panel p-6 rounded-2xl group relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 to-transparent opacity-100"></div>
               <div className="flex justify-between items-start relative z-10">
                 <div>
-                  <div className="text-violet-500/70 text-xs font-mono uppercase tracking-wider mb-2">Next Major Event</div>
-                  <div className="text-5xl font-display font-bold text-white group-hover:text-violet-400 transition-colors">14<span className="text-xl font-sans font-normal text-slate-500 ml-1">h</span> 30<span className="text-xl font-sans font-normal text-slate-500 ml-1">m</span></div>
+                  <div className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mb-2 font-bold">Next Major Event</div>
+                  <div className="text-5xl font-display font-bold text-slate-800 group-hover:text-violet-700 transition-colors">14<span className="text-xl font-sans font-normal text-slate-400 ml-1">h</span> 30<span className="text-xl font-sans font-normal text-slate-400 ml-1">m</span></div>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
+                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-violet-500 shadow-sm group-hover:scale-110 transition-transform">
                   <Calendar className="w-6 h-6" />
                 </div>
               </div>
-              <div className="mt-4 text-sm text-slate-400 font-mono">
+              <div className="mt-4 text-sm text-slate-500 font-mono font-medium">
                  Kumbh Mela Prep Phase II
               </div>
             </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </header>
@@ -336,7 +378,7 @@ export default function App() {
             )}
             
             {/* Intelligence Panel (Below Map) */}
-            <IntelligencePanel />
+            <IntelligencePanel activeModule={activeModule} />
           </div>
 
           {/* Details Column (4 cols) */}
@@ -349,67 +391,69 @@ export default function App() {
                 <CrowdDashboard zone={selectedCrowdZone} />
               )}
               
-              {/* Quick Actions / Legend - Dynamic based on module */}
-              <div className="glass-panel p-6 rounded-2xl border border-midnight-800">
-                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-                    <h4 className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold">
-                       {activeModule === 'water' ? 'Risk Taxonomy' : 'Density Thresholds'}
-                    </h4>
-                    <Hexagon className="w-4 h-4 text-slate-600" />
-                 </div>
-                 <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm group cursor-default p-2 rounded hover:bg-white/5 transition-colors">
-                       <span className="flex items-center gap-3 text-slate-300 group-hover:text-white transition-colors font-medium">
-                         <span className="w-2.5 h-2.5 rounded-full bg-risk-low shadow-[0_0_10px_#10b981]"></span>
-                         {activeModule === 'water' ? 'Safe / Optimal' : 'Normal Flow'}
-                       </span>
-                       <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
-                          {activeModule === 'water' ? 'QS > 80' : '< 50% Cap'}
-                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm group cursor-default p-2 rounded hover:bg-white/5 transition-colors">
-                       <span className="flex items-center gap-3 text-slate-300 group-hover:text-white transition-colors font-medium">
-                         <span className="w-2.5 h-2.5 rounded-full bg-risk-moderate shadow-[0_0_10px_#f59e0b]"></span>
-                         {activeModule === 'water' ? 'Moderate Risk' : 'High Volume'}
-                       </span>
-                       <span className="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
-                          {activeModule === 'water' ? 'QS 60-80' : '50-80% Cap'}
-                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm group cursor-default p-2 rounded hover:bg-white/5 transition-colors">
-                       <span className="flex items-center gap-3 text-slate-300 group-hover:text-white transition-colors font-medium">
-                         <span className="w-2.5 h-2.5 rounded-full bg-risk-critical shadow-[0_0_10px_#e11d48] animate-pulse"></span>
-                         {activeModule === 'water' ? 'Critical Failure' : 'Stampede Risk'}
-                       </span>
-                       <span className="font-mono text-[10px] text-red-500 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
-                          {activeModule === 'water' ? 'QS < 40' : '> 90% Cap'}
-                       </span>
-                    </div>
-                 </div>
-              </div>
+              {/* Quick Actions / Legend - Water Only */}
+              {activeModule === 'water' && (
+                <div className="glass-panel p-6 rounded-2xl">
+                   <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                      <h4 className="text-xs font-mono text-slate-500 uppercase tracking-widest font-bold">
+                         Risk Taxonomy
+                      </h4>
+                      <Hexagon className="w-4 h-4 text-slate-400" />
+                   </div>
+                   <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm group cursor-default p-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                         <span className="flex items-center gap-3 text-slate-600 group-hover:text-slate-900 transition-colors font-medium">
+                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm ring-2 ring-emerald-100"></span>
+                           Safe / Optimal
+                         </span>
+                         <span className="font-mono text-[10px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+                            QS &gt; 80
+                         </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm group cursor-default p-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                         <span className="flex items-center gap-3 text-slate-600 group-hover:text-slate-900 transition-colors font-medium">
+                           <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm ring-2 ring-amber-100"></span>
+                           Moderate Risk
+                         </span>
+                         <span className="font-mono text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
+                            QS 60-80
+                         </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm group cursor-default p-2 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                         <span className="flex items-center gap-3 text-slate-600 group-hover:text-slate-900 transition-colors font-medium">
+                           <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm ring-2 ring-red-100 animate-pulse"></span>
+                           Critical Failure
+                         </span>
+                         <span className="font-mono text-[10px] text-red-700 bg-red-50 px-2 py-1 rounded-md border border-red-200">
+                            QS &lt; 40
+                         </span>
+                      </div>
+                   </div>
+                </div>
+              )}
             </div>
           </div>
 
         </div>
       </main>
 
-      <footer className="container mx-auto px-6 lg:px-12 py-10 border-t border-midnight-800/50 mt-12 relative z-10 bg-midnight-950/50 backdrop-blur-sm">
+      <footer className="container mx-auto px-6 lg:px-12 py-10 border-t border-slate-200/60 mt-12 relative z-10 bg-white/40 backdrop-blur-md">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
             <SentinelLogo />
             <div>
-               <span className="font-display font-bold text-lg tracking-wide block leading-none">BASIN SENTINELS</span>
-               <span className="text-[10px] font-mono text-slate-500">INITIATIVE BY NASHIK SMART CITY</span>
+               <span className="font-display font-bold text-lg text-slate-900 tracking-wide block leading-none">BASIN SENTINELS</span>
+               <span className="text-[10px] font-mono text-slate-500 font-bold">INITIATIVE BY NASHIK SMART CITY</span>
             </div>
           </div>
-          <div className="flex gap-8 text-[11px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
-            <a href="#" className="hover:text-cyan-400 transition-colors">Documentation</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">API Access</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">Gov Portal</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">Privacy</a>
+          <div className="flex gap-8 text-[11px] font-mono text-slate-500 uppercase tracking-widest font-semibold">
+            <a href="#" className="hover:text-cyan-600 transition-colors">Documentation</a>
+            <a href="#" className="hover:text-cyan-600 transition-colors">API Access</a>
+            <a href="#" className="hover:text-cyan-600 transition-colors">Gov Portal</a>
+            <a href="#" className="hover:text-cyan-600 transition-colors">Privacy</a>
           </div>
-          <p className="text-slate-600 text-xs font-mono flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> SECURE CONNECTION • ENCRYPTED
+          <p className="text-slate-500 text-xs font-mono flex items-center gap-2 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> SECURE CONNECTION • ENCRYPTED
           </p>
         </div>
       </footer>

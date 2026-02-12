@@ -1,54 +1,81 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Basin Sentinels | Water Intelligence System</title>
-    <!-- Dynamic SVG Favicon (Shield + Water Drop) -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpath d='M12 8v4' stroke='%233b82f6'/%3E%3Cpath d='M12 16h.01' stroke='%233b82f6'/%3E%3C/svg%3E" />
+    <!-- Professional SaaS Favicon: Dark Navy Tile with Glowing Cyan Drop -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='64' height='64' rx='16' fill='%230F172A'/%3E%3Cpath d='M32 12C32 12 14 29 14 39C14 48.9411 22.0589 57 32 57C41.9411 57 50 48.9411 50 39C50 29 32 12 32 12Z' fill='url(%23paint0_linear)'/%3E%3Ccircle cx='32' cy='43' r='4' fill='white'/%3E%3Cdefs%3E%3ClinearGradient id='paint0_linear' x1='32' y1='12' x2='32' y2='57' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%2338BDF8'/%3E%3Cstop offset='1' stop-color='%230284C7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script>
       tailwind.config = {
-        darkMode: 'class',
         theme: {
           extend: {
             colors: {
+              // Primary Dark Scale (Deep Navy-Greys for Text/UI)
               midnight: {
-                950: '#020617', // Slate 950 - Deepest Background
-                900: '#0f172a', // Slate 900 - Card Background
-                800: '#1e293b', // Slate 800 - Borders/Hover
-                700: '#334155', // Slate 700 - Muted Text
+                950: '#020617', 
+                900: '#0B1120', // Darker navy
+                800: '#151e32', 
+                700: '#334155', 
               },
+              // Canvas Colors (Crisp White/Ice)
+              canvas: {
+                50: '#F8FAFC', 
+                100: '#F1F5F9', 
+                200: '#E2E8F0', 
+                300: '#CBD5E1', 
+                900: '#0F172A', 
+              },
+              // Primary Brand Colors (Overriding Cyan with "Electric Azure")
               cyan: {
-                400: '#22d3ee', // Cyan 400 - Primary Glow
-                500: '#06b6d4', // Cyan 500 - Interactive
-                900: '#083344', // Cyan 900 - Deep Overlay
+                50: '#F0F9FF',
+                100: '#E0F2FE',
+                200: '#BAE6FD',
+                300: '#7DD3FC',
+                400: '#38BDF8', // Bright Azure
+                500: '#0EA5E9', // Vivid Blue-Cyan
+                600: '#0284C7', // Deep Azure
+                700: '#0369A1',
+                800: '#075985',
+                900: '#0C4A6E', 
+                950: '#082F49',
               },
+              // Secondary Brand Colors (Tech Indigo)
               violet: {
-                500: '#6366f1', // Indigo 500
-                400: '#818cf8',
+                50: '#EEF2FF',
+                100: '#E0E7FF',
+                500: '#6366F1', 
+                600: '#4F46E5', 
+                700: '#4338CA',
+                400: '#818CF8',
               },
+              // Semantic Risk Colors (Vibrant)
               risk: {
-                low: '#10b981', // Emerald 500
-                moderate: '#f59e0b', // Amber 500
-                high: '#f43f5e', // Rose 500
-                critical: '#e11d48' // Rose 600
+                low: '#10B981',      // Emerald
+                moderate: '#F59E0B', // Amber
+                high: '#F97316',     // Orange (Punchy)
+                critical: '#EF4444'  // Red (Alert)
               }
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
-              display: ['Rajdhani', 'sans-serif'],
+              display: ['Space Grotesk', 'sans-serif'],
+              tech: ['Rajdhani', 'sans-serif'],
               mono: ['JetBrains Mono', 'monospace'],
             },
             backgroundImage: {
               'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-              'circuit-pattern': "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2338bdf8' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+              'circuit-pattern': "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2364748b' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+              'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")",
             },
             animation: {
               blob: "blob 20s infinite",
               pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              'spin-slow': 'spin 8s linear infinite',
+              'shimmer': 'shimmer 2s linear infinite',
             },
             keyframes: {
               blob: {
@@ -57,47 +84,75 @@
                 "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
                 "100%": { transform: "translate(0px, 0px) scale(1)" },
               },
+              shimmer: {
+                "0%": { backgroundPosition: "-1000px 0" },
+                "100%": { backgroundPosition: "1000px 0" }
+              }
             },
+            boxShadow: {
+              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+              'glow': '0 0 15px rgba(14, 165, 233, 0.4)',
+              'panel': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            }
           },
         },
       }
     </script>
     <style>
       body {
-        background-color: #020617;
-        color: #f1f5f9;
+        background-color: #F8FAFC;
+        color: #0F172A; 
         overflow-x: hidden;
       }
       
+      /* Global Noise Overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E");
+        opacity: 0.08;
+        z-index: -1;
+        pointer-events: none;
+      }
+
       /* Scrollbar Styling */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #020617; 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #1e293b; 
+        background: #94A3B8; 
         border-radius: 99px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #334155; 
+        background: #64748B; 
       }
 
+      /* Premium Glassmorphism */
       .glass-panel {
-        background: rgba(15, 23, 42, 0.65);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.6);
       }
       
       .glass-panel-hover:hover {
-        background: rgba(30, 41, 59, 0.75);
-        border-color: rgba(56, 189, 248, 0.3);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease-out;
+        background: rgba(255, 255, 255, 0.85);
+        border-color: rgba(56, 189, 248, 0.6);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        transform: translateY(-2px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       /* Custom Leaflet Marker Styles */
@@ -105,29 +160,42 @@
         background: transparent;
         border: none;
       }
-      .marker-pin {
-        border-radius: 50%;
-        border: 2px solid #ffffff;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+
+      /* Reset Leaflet Default Tooltip Styles */
+      .leaflet-tooltip {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
       }
-      .marker-pulse {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        animation: pulse-ring 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+
+      @keyframes soft-ripple {
+        0% { transform: scale(1); opacity: 0.4; } 
+        100% { transform: scale(1.8); opacity: 0; } 
       }
-      @keyframes pulse-ring {
-        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.6; }
-        80% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
-        100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+      .animate-soft-ripple {
+        animation: soft-ripple 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+      }
+
+      .heatmap-blob {
+        filter: blur(40px);
+        mix-blend-mode: multiply;
+        transition: all 0.5s ease-in-out;
       }
       
-      /* Utility for text selection */
+      .tooltip-enter-active {
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        opacity: 1 !important;
+        transform: translate3d(0, 0, 0) scale(1) !important;
+      }
+      .tooltip-initial {
+        opacity: 0 !important;
+        transform: translate3d(0, 10px, 0) scale(0.9) !important;
+      }
+      
       ::selection {
-        background: rgba(34, 211, 238, 0.2);
-        color: #22d3ee;
+        background: rgba(14, 165, 233, 0.2);
+        color: #0369A1;
       }
     </style>
   <script type="importmap">
